@@ -1,6 +1,9 @@
 # Switch Environment
 
 #### Steps
+#### Software/Tools needed to be installed
+- Install NodeJS : https://nodejs.org/en
+- Install VSCode
 
 #### Install
 - npm install
