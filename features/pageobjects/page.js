@@ -1,6 +1,6 @@
 
 
-const smallTimeout = 10000
+const smallTimeout = 1000 //1 seconds
 
 module.exports = class Page {
 
@@ -9,10 +9,10 @@ module.exports = class Page {
     }
 
     async waitForSmallTime() {
-        await browser.pause(smallTimeout);
+        await browser.pause(10*smallTimeout);
     }
 
     async waitForLongTime() {
-        await browser.pause(5 * smallTimeout);
+        await browser.pause(20 * smallTimeout);
     }
 }

@@ -1,3 +1,8 @@
+
+//const allure = require('@wdio/allure-reporter').default;
+
+const allure = require('allure-commandline')
+
 exports.config = {
     //
     // ====================
@@ -5,7 +10,7 @@ exports.config = {
     // ====================
     // WebdriverIO supports running e2e tests as well as unit and component tests.
     runner: 'local',
-    
+
     //
     // ==================
     // Specify Test Files
@@ -52,7 +57,7 @@ exports.config = {
     // https://saucelabs.com/platform/platform-configurator
     //
     capabilities: [{
-    
+
         // maxInstances can get overwritten per capability. So if you have an in-house Selenium
         // grid with only 5 firefox instances available you can make sure that not more than
         // 5 instances get started at a time.
@@ -72,7 +77,7 @@ exports.config = {
     // Define all options that are relevant for the WebdriverIO instance here
     //
     // Level of logging verbosity: trace | debug | info | warn | error | silent
-    logLevel: 'info',
+    logLevel: 'debug',
     //
     // Set specific log levels per logger
     // loggers:
@@ -83,10 +88,10 @@ exports.config = {
     // - @wdio/sumologic-reporter
     // - @wdio/cli, @wdio/config, @wdio/utils
     // Level of logging verbosity: trace | debug | info | warn | error | silent
-    // logLevels: {
-    //     webdriver: 'info',
-    //     '@wdio/appium-service': 'info'
-    // },
+    logLevels: {
+        webdriver: 'debug',
+        '@wdio/appium-service': 'info'
+    },
     //
     // If you only want to run your tests until a specific amount of tests have failed use
     // bail (default is 0 - don't bail, run all tests).
@@ -113,7 +118,7 @@ exports.config = {
     // your test setup with almost no effort. Unlike plugins, they don't add new
     // commands. Instead, they hook themselves up into the test process.
     services: ['chromedriver'],
-    
+
     // Framework you want to run your specs with.
     // The following are supported: Mocha, Jasmine, and Cucumber
     // see also: https://webdriver.io/docs/frameworks
@@ -134,7 +139,29 @@ exports.config = {
     // Test reporter for stdout.
     // The only one supported by default is 'dot'
     // see also: https://webdriver.io/docs/dot-reporter
-    reporters: ['spec'],
+    reporters: ['spec',
+        ['allure', {
+            outputDir: 'allure-results',
+            disableWebdriverStepsReporting: true,
+            disableWebdriverScreenshotsReporting: false,
+        }]
+    ],
+
+    beforeSuite: function (suite) {
+        global.allure = allure;
+        allure.addFeature(suite.name);
+        allure.addDescription("generating Allure reports " + suite.name);
+    },
+
+    beforeTest: function (test, context) {
+        allure.addEnvironment("BROWSER", browser.capabilities.browserName);
+        allure.addEnvironment("BROWSER_VERSION", browser.capabilities.version);
+        allure.addEnvironment("PLATFORM", browser.capabilities.platform);
+        allure.addDescription("generating Allure reports" + test.title);
+        allure.addTestId("TC-001" + test.title);
+        allure.addLabel("label" + + today.toISOString().replace(/[^\w]/g, "") + ".png");
+    },
+
 
 
     //
@@ -159,11 +186,11 @@ exports.config = {
         // <string> (expression) only execute the features or scenarios with tags matching the expression
         tagExpression: '',
         // <number> timeout for step definitions
-        timeout: 60000,
+        timeout: 2*60000,  // 1 min
         // <boolean> Enable this config to treat undefined definitions as warnings.
         ignoreUndefinedDefinitions: false
     },
-    
+
     //
     // =====
     // Hooks
@@ -216,6 +243,7 @@ exports.config = {
      * @param {Array.<String>} specs        List of spec file paths that are to be run
      * @param {Object}         browser      instance of created browser/device session
      */
+
     // before: function (capabilities, specs) {
     // },
     /**
@@ -262,8 +290,11 @@ exports.config = {
      * @param {number}             result.duration  duration of scenario in milliseconds
      * @param {Object}             context          Cucumber World object
      */
-    // afterStep: function (step, scenario, result, context) {
-    // },
+    afterStep: async function (step, scenario, { error, duration, passed }, context) {
+        if (error) {
+            await browser.takeScreenshot();
+        }
+    },
     /**
      *
      * Runs after a Cucumber Scenario.
@@ -284,7 +315,7 @@ exports.config = {
      */
     // afterFeature: function (uri, feature) {
     // },
-    
+
     /**
      * Runs after a WebdriverIO command gets executed
      * @param {String} commandName hook command name
@@ -319,8 +350,26 @@ exports.config = {
      * @param {Array.<Object>} capabilities list of capabilities details
      * @param {<Object>} results object containing test results
      */
-    // onComplete: function(exitCode, config, capabilities, results) {
-    // },
+    onComplete: function (exitCode, config, capabilities, results) {
+        const reportError = new Error('Could not generate Allure report')
+        const generation = allure(['generate', 'allure-results', '--clean'])
+        return new Promise((resolve, reject) => {
+            const generationTimeout = setTimeout(
+                () => reject(reportError),
+                5000)
+
+            generation.on('exit', function (exitCode) {
+                clearTimeout(generationTimeout)
+
+                if (exitCode !== 0) {
+                    return reject(reportError)
+                }
+
+                console.log('Allure report successfully generated')
+                resolve()
+            })
+        })
+    },
     /**
     * Gets executed when a refresh happens.
     * @param {String} oldSessionId session ID of the old session

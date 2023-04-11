@@ -115,6 +115,7 @@ class HomePage extends Page {
         await this.lastName.setValue(testData.LAST_NAME);
         await this.email.setValue(testData.EMAIL);
         await this.country.setValue(testData.COUNTRY);
+        await this.organization.setValue(testData.ORGANIZATION);
         await this.mobile.setValue(testData.MOBILE);
         await this.message.setValue(testData.MESSAGE);
     }
@@ -124,16 +125,18 @@ class HomePage extends Page {
         await this.lastName.setValue(testData.LAST_NAME);
         await this.email.setValue(testData.EMAIL);
         await this.country.setValue(testData.COUNTRY);
+        await this.organization.setValue(testData.ORGANIZATION);
         await this.mobile.setValue(testData.MOBILE);
         await this.message.setValue(testData.MESSAGE);
     }
 
     // fill space in the mandatory field to check the required field validation is showing or not?
     async fillFormWithSpace() {
-        await this.firstName.setValue(" ");
-        await this.lastName.setValue(" ");
-        await this.email.setValue(" ");
+        await this.firstName.setValue(testData.BLANK_SPACE);
+        await this.lastName.setValue(testData.BLANK_SPACE);
+        await this.email.setValue(testData.BLANK_SPACE);
         await this.country.setValue(testData.COUNTRY);
+        await this.organization.setValue(testData.ORGANIZATION);
         await this.mobile.setValue(testData.MOBILE);
         await this.message.setValue(testData.MESSAGE);
     }
@@ -151,11 +154,13 @@ class HomePage extends Page {
     }
 
     async submitFormByClick() {
+        await this.waitForLongTime()
         await this.btnSubmit.scrollIntoView();
         await this.btnSubmit.click()
     }
 
     async submitFormByEnter() {
+        await this.waitForLongTime()
         await browser.keys("Enter")
     }
 
@@ -175,8 +180,7 @@ class HomePage extends Page {
         }, {
             timeout: 6000,
             timeoutMsg: 'expected text to be different after 5s'
-        })
-        console.log(this.incorrectEmailMessage.getText())
+        })        
        await expect(this.incorrectEmailMessage).toHaveText(testData.INCORRECT_EMAIL_MESSAGE)
     }
 
